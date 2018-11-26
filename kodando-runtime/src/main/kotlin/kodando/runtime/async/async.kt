@@ -1,33 +1,23 @@
-@file:Suppress("EXPERIMENTAL_FEATURE_WARNING")
-
 package kodando.runtime.async
 
-import kotlin.coroutines.experimental.Continuation
-import kotlin.coroutines.experimental.CoroutineContext
-import kotlin.coroutines.experimental.EmptyCoroutineContext
-import kotlin.coroutines.experimental.startCoroutine
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.promise
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.js.Promise
 
 /**
  * Created by danfma on 17/01/2017.
  */
 
-fun <T> async(block: suspend () -> T): Future<T> {
-  val promise = Promise<T> { resolve, reject ->
-    block.startCoroutine(completion = object : Continuation<T> {
-      override val context: CoroutineContext = EmptyCoroutineContext
-
-      override fun resume(value: T) {
-        resolve(value)
-      }
-
-      override fun resumeWithException(exception: Throwable) {
-        reject(exception)
-      }
-    })
-  }
-
-  return Future(promise)
+private val asyncScope = object : CoroutineScope {
+  override val coroutineContext: CoroutineContext = EmptyCoroutineContext
 }
 
-fun <T> asyncPromise(block: suspend () -> T) = async(block).toPromise()
+fun <T> async(block: suspend () -> T): Promise<T> {
+  console.log("Before starting the coroutines")
+
+  return asyncScope.promise {
+    block()
+  }
+}
